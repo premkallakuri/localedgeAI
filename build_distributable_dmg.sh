@@ -95,16 +95,13 @@ pick the right artifact below.
            scroll to the bottom →
            "LocalEdge AI was blocked"  →  Click "Open Anyway"
 
-  3. (One-time) Install llama.cpp + a model so the app has something to
-     talk to:
+  3. Launch LocalEdge AI — llama.cpp and the default Gemma model are
+     bundled inside the app. The first launch starts the local inference
+     server automatically (may take ~10–20 seconds while the model loads).
 
-         brew install llama.cpp
-         # Any .gguf model works; Gemma 3 4B is the recommended default:
-         curl -L -o ~/Downloads/gemma.gguf <model URL>
-         llama-server --model ~/Downloads/gemma.gguf --port 8088 &
+     The top-right pill should show "llama.cpp ● 1 model(s)" when ready.
 
-  4. Launch LocalEdge AI — the top-right pill should show
-     "llama.cpp ● 1 model(s)".
+     No Homebrew, Ollama, or manual model download required on macOS.
 
 ────────────────────────────────────────────────────────────────────────
 ▶ IPHONE / IPAD INSTALL  (iOS 17+)

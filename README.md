@@ -9,10 +9,19 @@ Universal Swift package: **macOS 14+** (llama.cpp / Ollama) and **iOS 17+** (Lit
 ```bash
 git clone https://github.com/premkallakuri/localedgeAI.git
 cd localedgeAI
+git lfs pull
 open Package.swift          # Xcode
 python3 scripts/generate_icon.py
-./build_app.sh              # macOS
+./build_app.sh              # macOS — bundles llama.cpp + downloads default model
 ./build_ios_app.sh          # iOS Simulator
+```
+
+**macOS build note:** `./build_app.sh` automatically fetches `llama-server` (via Homebrew on the build machine), downloads the default Gemma GGUF model from Hugging Face, and embeds both in the `.app`. End users do not need Homebrew or Ollama.
+
+Skip steps for faster dev iteration:
+
+```bash
+SKIP_MODEL_DOWNLOAD=1 ./build_app.sh   # reuse build/models/*.gguf
 ```
 
 See [STARTER.md](STARTER.md) and [iOS_BUILD.md](iOS_BUILD.md) for full build and App Store notes.

@@ -21,6 +21,9 @@ struct RootView: View {
         .background(palette.surfaceContainer)
         .preferredColorScheme(.light)
         .task {
+            #if os(macOS)
+            await LlamaServerManager.shared.ensureRunning()
+            #endif
             await appState.refreshModels()
         }
         .tint(custom.appTitleGradient.last ?? palette.primary)

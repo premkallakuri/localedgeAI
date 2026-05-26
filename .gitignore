@@ -11,6 +11,8 @@ DerivedData/
 # Build outputs
 build/
 dist/
+build/engine/
+build/models/
 *.app/
 *.ipa
 *.dmg

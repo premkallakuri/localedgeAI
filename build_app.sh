@@ -11,6 +11,23 @@ AUTHOR="Prem Saran Kallakuri"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
+DEFAULT_MODEL="$(python3 - <<'PY'
+import json, pathlib
+print(json.loads(pathlib.Path("Sources/LocalEdgeAI/Resources/AppConfig.json").read_text())["defaultModel"])
+PY
+)"
+
+# --- Bundled inference engine (llama.cpp) + default model --------------------
+if [ "${SKIP_ENGINE:-0}" != "1" ]; then
+  echo "==> Fetch/build bundled llama-server"
+  bash "$ROOT/scripts/fetch_llama_cpp.sh"
+fi
+
+if [ "${SKIP_MODEL_DOWNLOAD:-0}" != "1" ]; then
+  echo "==> Download default GGUF model ($DEFAULT_MODEL)"
+  bash "$ROOT/scripts/download_models.sh"
+fi
+
 echo "==> Building Swift package (release)..."
 swift build -c release --arch arm64
 
@@ -39,6 +56,29 @@ done
 # Embed app icon
 if [ -f "$ROOT/build/icons/AppIcon.icns" ]; then
   cp "$ROOT/build/icons/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+fi
+
+# Bundle llama-server + default model (macOS offline inference)
+ENGINE_SRC="$ROOT/build/engine/llama-server"
+ENGINE_LIB_SRC="$ROOT/build/engine/lib"
+MODEL_SRC="$ROOT/build/models/$DEFAULT_MODEL"
+if [ -x "$ENGINE_SRC" ]; then
+  mkdir -p "$APP/Contents/Resources/Engine/lib"
+  cp "$ENGINE_SRC" "$APP/Contents/Resources/Engine/llama-server"
+  chmod +x "$APP/Contents/Resources/Engine/llama-server"
+  if [ -d "$ENGINE_LIB_SRC" ]; then
+    cp "$ENGINE_LIB_SRC"/*.dylib "$APP/Contents/Resources/Engine/lib/" 2>/dev/null || true
+  fi
+  echo "==> Bundled llama-server + runtime libs"
+else
+  echo "⚠ No llama-server at $ENGINE_SRC — run scripts/fetch_llama_cpp.sh" >&2
+fi
+if [ -f "$MODEL_SRC" ]; then
+  mkdir -p "$APP/Contents/Resources/Models"
+  cp "$MODEL_SRC" "$APP/Contents/Resources/Models/$DEFAULT_MODEL"
+  echo "==> Bundled model $DEFAULT_MODEL"
+else
+  echo "⚠ No model at $MODEL_SRC — run scripts/download_models.sh" >&2
 fi
 
 cat > "$APP/Contents/Info.plist" <<PLIST
@@ -81,16 +121,21 @@ if [ -n "${SIGN_IDENTITY:-}" ]; then
     SIGN_FLAGS=(--force --options runtime --timestamp)
     SIGNER=("$SIGN_IDENTITY")
 else
-    echo "==> No Developer ID found — deep ad-hoc signing (Gatekeeper will warn)"
-    SIGN_FLAGS=(--force --options runtime --timestamp=none)
+    echo "==> No Developer ID found — ad-hoc signing (Gatekeeper will warn)"
+    SIGN_FLAGS=(--force --timestamp=none)
     SIGNER=("-")
 fi
 
 # Sign every embedded framework first (deepest first so codesign is consistent)
 for f in "$APP/Contents/Frameworks"/*.framework "$APP/Contents/Frameworks"/*.dylib; do
-    [ -e "$f" ] || continue
-    codesign "${SIGN_FLAGS[@]}" --sign "${SIGNER[@]}" "$f" >/dev/null 2>&1 || true
+  [ -e "$f" ] || continue
+  codesign "${SIGN_FLAGS[@]}" --sign "${SIGNER[@]}" "$f" >/dev/null 2>&1 || true
 done
+# Sign bundled inference engine (ad-hoc / Developer ID must match the app signature)
+if [ -x "$APP/Contents/Resources/Engine/llama-server" ]; then
+  codesign --force --sign "${SIGNER[@]}" "${SIGN_FLAGS[@]}" \
+    "$APP/Contents/Resources/Engine/llama-server" >/dev/null 2>&1 || true
+fi
 # Then the main bundle (deep so any nested helpers also get signed)
 codesign "${SIGN_FLAGS[@]}" --deep --sign "${SIGNER[@]}" "$APP" >/dev/null 2>&1 || true
 
