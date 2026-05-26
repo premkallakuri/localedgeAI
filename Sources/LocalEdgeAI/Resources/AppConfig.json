@@ -1,0 +1,10 @@
+{
+  "appName": "LocalEdge AI",
+  "version": "0.4.0",
+  "tagline": "On-device generative AI for Mac & iOS",
+  "ollamaBaseURL": "http://127.0.0.1:11434",
+  "defaultModel": "gemma-3-4b-it-q4_0.gguf",
+  "fallbackModels": ["gemma4:e4b", "gemma4:e2b", "gemma3:4b", "llama3.2:3b", "Qwen3-0.6B.litertlm"],
+  "systemPrompt": "You are LocalEdge, a helpful on-device AI assistant running fully offline on the user's device. Be concise and accurate.",
+  "author": "Prem Saran Kallakuri"
+}

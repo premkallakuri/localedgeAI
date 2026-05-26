@@ -1,0 +1,14 @@
+.build/
+.swiftpm/
+*.xcodeproj/
+DerivedData/
+build/
+dist/
+*.app/
+*.ipa
+*.dmg
+.DS_Store
+._*
+.Spotlight-V100
+.fseventsd
+Frameworks/CLiteRTLM.xcframework.zip
